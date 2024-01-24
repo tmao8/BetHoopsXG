@@ -1,6 +1,5 @@
 import pandas as pd
 import playerdata as dt
-from sklearn.model_selection import train_test_split
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
@@ -8,28 +7,22 @@ import time
 from tqdm import tqdm
 from datetime import datetime
 import os
+import pickle
+from sklearn.model_selection import GridSearchCV
+
 
 # Saved files and player index
 today_date = datetime.now().strftime("%Y-%m-%d")
-data_filename = f"your_data_file_{today_date}.csv"
+data_filename = f"gamelogs_as_of_{today_date}.csv"
 index_filename = f"last_index_{today_date}.txt"
 
 # Features to build model on:
 features = ["MATCHUP", "HOME", "PLAYER", "MIN", "POSITION"]
 players = dt.get_player_list()
 
-# Save data after every run: frequent https timeouts
+# Sleep to prevent https timeouts
 time.sleep(0.6)
 data = pd.DataFrame(columns=["PLAYER", "POSITION", "PTS", "MATCHUP", "HOME", "MIN"])
-
-column_types = {
-    "PLAYER": "category",
-    "POSITION": "category",
-    "PTS": "int64",
-    "MATCHUP": "category",
-    "HOME": "bool",
-    "MIN": "int64",
-}
 
 # Check if the data file already exists
 if os.path.exists(data_filename):
@@ -71,36 +64,38 @@ for i in tqdm(range(last_index, len(players), batch_size)):
     # Save data after each batch
     data.to_csv(data_filename, index=False)
 
-data = data.astype(column_types)
-
-X = data[features]
-y = data["PTS"]
-
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+# One hot encode categorical data to use with XGBoost
+data_one_hot_encoded = pd.get_dummies(
+    data, columns=["PLAYER", "HOME", "POSITION", "MATCHUP"], prefix="Category"
 )
+data_one_hot_encoded = data_one_hot_encoded.reindex(
+    sorted(data_one_hot_encoded.columns), axis=1
+)
+data_one_hot_encoded["MIN"] = data_one_hot_encoded["MIN"].astype("float64")
 
+# Separate into features and value we are predicting
+y = data_one_hot_encoded["PTS"]
+X = data_one_hot_encoded.drop("PTS", axis=1)
+
+
+# Build and fit model
 model = xgb.XGBRegressor(
-    enable_categorical=True, objective="reg:squarederror", tree_method="hist"
+    enable_categorical=True,
+    objective="reg:squarederror",
+    tree_method="hist",
+    learning_rate=0.2,
+    subsample=0.7,
+    reg_lambda=0.1,
+    reg_alpha=0.1,
+    n_estimators=300,
+    colsample_bytree=0.8,
+    gamma=0,
+    max_depth=4,
 )
-model.fit(X_train, y_train)
 
-# Make predictions on the test set
-predictions = model.predict(X_test)
-comparison_df = pd.DataFrame(
-    {
-        "PLAYER": X_test["PLAYER"],
-        "MATCHUP": X_test["MATCHUP"],
-        "Actual": y_test,
-        "Predicted": predictions,
-    }
-)
-comparison_df.to_csv("model_test.csv")
+model.fit(X, y)
 
-xgb.plot_importance(model, max_num_features=10)
-plt.show()
-
-# Evaluate the model
-mse = mean_squared_error(y_test, predictions)
-print(f"Mean Squared Error: {mse}")
+# Save the trained model
+model_filename = f"xgboost_fitted_{today_date}.pkl"
+with open("models/" + model_filename, "wb") as model_file:
+    pickle.dump(model, model_file)

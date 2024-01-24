@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import requests
 from pandas import json_normalize
 
@@ -34,7 +33,25 @@ def retrieve_point_lines():
         ]
     ]
     prizepicksptsDf = df[df["attributes.stat_type"] == "Points"]
+    column_mapping = {
+        "attributes.name": "PLAYER",
+        "attributes.line_score": "PTS",
+        "attributes.position": "POSITION",
+        "attributes.description": "MATCHUP",
+    }
+
+    position_mapping = {
+        "G": "Guard",
+        "F": "Forward",
+        "C": "Center",
+        "G-F": "Guard-Forward",
+        "F-G": "Forward-Guard",
+        "C-F": "Center-Forward",
+        "F-C": "Forward-Center",
+    }
+
+    # Rename columns and positions
+    prizepicksptsDf = prizepicksptsDf.copy()
+    prizepicksptsDf.rename(columns=column_mapping, inplace=True)
+    prizepicksptsDf["POSITION"] = prizepicksptsDf["POSITION"].map(position_mapping)
     return prizepicksptsDf
-
-
-print(retrieve_point_lines())
