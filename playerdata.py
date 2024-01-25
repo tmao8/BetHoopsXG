@@ -4,6 +4,8 @@ from nba_api.stats.static import players
 from nba_api.stats.endpoints import playergamelog
 from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.endpoints import teamgamelog, scoreboard
+import time
+import csv
 
 
 # Gets nba player's NBA.com ID using full name
@@ -42,7 +44,7 @@ def get_player_position(player_id):
     return position
 
 
-# returns data with gamelog and position
+# Returns data with gamelog and position
 def get_full_data(player_id):
     pos = get_player_position(player_id)
     gamelog = get_player_gamelog(player_id)
@@ -51,7 +53,7 @@ def get_full_data(player_id):
     return data
 
 
-# returns a player's average minutes in the previous 5 games
+# Returns a player's average minutes in the previous 5 games
 def get_last5_avg_min(player_id):
     game_log = playergamelog.PlayerGameLog(player_id=player_id)
     game_log_data = game_log.get_data_frames()[0]
@@ -62,7 +64,7 @@ def get_last5_avg_min(player_id):
     return avg_minutes_last_5
 
 
-# returns True if the player's next game is at home
+# Returns True if the player's next game is at home
 def get_home(player_id):
     # Get the player's Team ID
     player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id)
@@ -76,8 +78,23 @@ def get_home(player_id):
     return False
 
 
-# returns full list of NBA players this season
+# Returns full list of NBA players this season
 def get_player_list():
     allactive = players.get_active_players()
     player_list = [nbaplayer["full_name"] for nbaplayer in allactive]
     return player_list
+
+
+# Returns DF containing each player's point total in their most recent game
+def get_last_game_pts(players):
+    points = []
+    for p in players:
+        # Get player game log using id
+        player_log = playergamelog.PlayerGameLog(player_id=get_player_id(p))
+        player_log = player_log.get_data_frames()[0]
+        last_game_points = player_log.iloc[0]["PTS"]
+        points.append(last_game_points)
+        time.sleep(0.6)
+    df = pd.DataFrame(columns=["PTS"])
+    df["PTS"] = points
+    return df
