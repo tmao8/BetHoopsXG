@@ -5,7 +5,6 @@ from nba_api.stats.endpoints import playergamelog
 from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.endpoints import teamgamelog, scoreboard
 import time
-import csv
 
 
 # Gets nba player's NBA.com ID using full name

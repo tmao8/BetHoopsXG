@@ -27,6 +27,9 @@ else:
         predictdf.iterrows(), total=len(predictdf), desc="Processing players"
     ):
         print(row["PLAYER"])
+        # Fix error with certain player
+        if row["PLAYER"] == "Nicolas Claxton":
+            row["PLAYER"] = "Nic Claxton"
         player_id = dt.get_player_id(row["PLAYER"])
 
         # Assign whether player is playing at home
@@ -80,4 +83,4 @@ comparison_df = pd.DataFrame(
 
 # Save predictions
 prediction_filename = f"model_predictions{today_date}.csv"
-comparison_df.to_csv(prediction_filename)
+comparison_df.to_csv(prediction_filename, index=False)
