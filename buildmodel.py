@@ -84,13 +84,14 @@ model = xgb.XGBRegressor(
     objective="reg:squarederror",
     tree_method="hist",
     learning_rate=0.2,
-    subsample=0.7,
+    subsample=0.6,
     reg_lambda=0.1,
     reg_alpha=0.1,
-    n_estimators=300,
-    colsample_bytree=0.8,
+    n_estimators=350,
+    colsample_bytree=0.6,
     gamma=0,
     max_depth=4,
+    num_parallel_tree=10,
 )
 
 model.fit(X, y)

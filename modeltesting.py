@@ -74,7 +74,7 @@ for i in tqdm(range(last_index, len(players), batch_size)):
         file.write(str(i + batch_size))
 
     # Save data after each batch
-    data.to_csv(data_filename, index_col=False)
+    data.to_csv(data_filename, index=False)
 
 # One hot encode categorical data to use with XGBoost
 data_one_hot_encoded = pd.get_dummies(
@@ -113,13 +113,14 @@ model = xgb.XGBRegressor(
     objective="reg:squarederror",
     tree_method="hist",
     learning_rate=0.2,
-    subsample=0.7,
+    subsample=0.6,
     reg_lambda=0.1,
     reg_alpha=0.1,
-    n_estimators=300,
-    colsample_bytree=0.8,
+    n_estimators=350,
+    colsample_bytree=0.6,
     gamma=0,
     max_depth=4,
+    num_parallel_tree=10,
 )
 
 model.fit(X_train, y_train)
