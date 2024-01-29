@@ -22,6 +22,7 @@ if os.path.exists(prizepicks_filename):
     # Load existing data file
     predictdf = pd.read_csv(prizepicks_filename, index_col=False)
 else:
+    playerset = set()
     # Fetch home/away + minutes data for players
     for index, row in tqdm(
         predictdf.iterrows(), total=len(predictdf), desc="Processing players"
@@ -30,17 +31,22 @@ else:
         # Fix error with certain player
         if row["PLAYER"] == "Nicolas Claxton":
             row["PLAYER"] = "Nic Claxton"
-        player_id = dt.get_player_id(row["PLAYER"])
+        if row["PLAYER"] in playerset:
+            predictdf = predictdf.drop(index)
+        else:
+            playerset.add(row["PLAYER"])
+            player_id = dt.get_player_id(row["PLAYER"])
 
-        # Assign whether player is playing at home
-        predictdf.at[index, "HOME"] = dt.get_home(player_id)
-        time.sleep(0.6)
+            # Assign whether player is playing at home
+            predictdf.at[index, "HOME"] = dt.get_home(player_id)
+            time.sleep(0.6)
 
-        # Assign estimated minutes for player
-        predictdf.at[index, "MIN"] = dt.get_last5_avg_min(player_id)
-        time.sleep(0.6)
-        predictdf.to_csv(prizepicks_filename, index=False)
+            # Assign estimated minutes for player
+            predictdf.at[index, "MIN"] = dt.get_last5_avg_min(player_id)
+            time.sleep(0.6)
+            predictdf.to_csv(prizepicks_filename, index=False)
 
+saveoriginal = predictdf.copy()
 # Alter DF to one hot encode and have correct columns
 pointlines = predictdf["PTS"]
 predictdf = predictdf.drop("attributes.stat_type", axis=1)
@@ -57,21 +63,15 @@ one_hot_encoded = pd.get_dummies(
 one_hot_encoded = one_hot_encoded.reindex(sorted(one_hot_encoded.columns), axis=1)
 X = one_hot_encoded.drop("PTS", axis=1)
 
+
 # Match columns of prediction set with full dataset
 missing_columns = set(X.columns) - set(predictdf.columns)
 predictdf = predictdf.reindex(
     columns=predictdf.columns.union(missing_columns), fill_value=0
 )
 
-# Get player list and lines from prizepicks
 
-# Check if the prizepicks data file already exists
-if os.path.exists(prizepicks_filename):
-    # Load existing data file
-    players = pd.read_csv(prizepicks_filename, index_col=False)
-else:
-    players = ppl.retrieve_point_lines()
-players = players["PLAYER"]
+players = saveoriginal["PLAYER"]
 predictions = saved_model.predict(predictdf)
 comparison_df = pd.DataFrame(
     {
