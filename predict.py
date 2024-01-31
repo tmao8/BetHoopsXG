@@ -27,10 +27,10 @@ else:
     for index, row in tqdm(
         predictdf.iterrows(), total=len(predictdf), desc="Processing players"
     ):
-        print(row["PLAYER"])
         # Fix error with certain player
         if row["PLAYER"] == "Nicolas Claxton":
             row["PLAYER"] = "Nic Claxton"
+            predictdf.at[index, "PLAYER"] = "Nic Claxton"
         if row["PLAYER"] in playerset:
             predictdf = predictdf.drop(index)
         else:
