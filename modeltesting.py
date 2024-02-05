@@ -84,6 +84,8 @@ data_one_hot_encoded = pd.get_dummies(
 data_one_hot_encoded = data_one_hot_encoded.reindex(
     sorted(data_one_hot_encoded.columns), axis=1
 )
+data_one_hot_encoded["MIN"] = data_one_hot_encoded["MIN"].astype("float64")
+
 
 # Separate into features and value we are predicting
 y = data_one_hot_encoded["PTS"]
@@ -172,8 +174,8 @@ comparison_df = pd.DataFrame(
 )
 comparison_df.to_csv("model_test.csv")
 
-# xgb.plot_importance(model, max_num_features=10)
-# plt.show()
+xgb.plot_importance(model, max_num_features=25)
+plt.show()
 
 # Evaluate the model
 mse = mean_squared_error(y_test, predictions)

@@ -1,7 +1,7 @@
 import pandas as pd
 from pandas import json_normalize
 from nba_api.stats.static import players
-from nba_api.stats.endpoints import playergamelog
+from nba_api.stats.endpoints import playergamelog, BoxScoreUsageV2
 from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.endpoints import teamgamelog, scoreboard
 import time
@@ -19,6 +19,17 @@ def get_player_gamelog(player_id):
     # Get player game log using id
     player_log = playergamelog.PlayerGameLog(player_id=player_id)
     player_log = player_log.get_data_frames()[0]
+
+    # # Get Player Usage Rates:
+    # game_ids = player_log["Game_ID"].tolist()
+    # usage_rates = []
+    # for game_id in game_ids:
+    #     usage_data = BoxScoreUsageV2(game_id=game_id).get_data_frames()[0]
+    #     usage_rate = usage_data.loc[
+    #         usage_data["PLAYER_ID"] == player_id, "USG_PCT"
+    #     ].values
+    #     usage_rates.append(usage_rate[0])
+    # player_log["USAGE_RATE"] = usage_rates
 
     # Filter data to include only team against and home game
     df = pd.DataFrame(player_log[["MATCHUP", "PTS", "MIN"]])
