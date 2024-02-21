@@ -33,7 +33,7 @@ def get_player_gamelog(player_id):
 
     # Filter data to include only team against and home game
     df = pd.DataFrame(player_log[["MATCHUP", "PTS", "MIN"]])
-    df["HOME"] = df["MATCHUP"].str[-5:-4] == "."
+    df["HOME"] = (df["MATCHUP"].str[-5:-4] == ".").astype(int)
     df["MATCHUP"] = df["MATCHUP"].str[-3:]
     return df
 

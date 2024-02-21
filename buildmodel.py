@@ -45,12 +45,14 @@ else:
 
 # One hot encode categorical data to use with XGBoost
 data_one_hot_encoded = pd.get_dummies(
-    data, columns=["PLAYER", "HOME", "POSITION", "MATCHUP"], prefix="Category"
+    data, columns=["PLAYER", "POSITION", "MATCHUP"], prefix="Category"
 )
 data_one_hot_encoded = data_one_hot_encoded.reindex(
     sorted(data_one_hot_encoded.columns), axis=1
 )
 data_one_hot_encoded["MIN"] = data_one_hot_encoded["MIN"].astype("float64")
+data_one_hot_encoded["HOME"] = data_one_hot_encoded["HOME"].astype("float64")
+
 
 # Separate into features and value we are predicting
 y = data_one_hot_encoded["PTS"]
@@ -69,7 +71,7 @@ model = xgb.XGBRegressor(
     n_estimators=350,
     colsample_bytree=0.5,
     gamma=0,
-    max_depth=4,
+    max_depth=5,
     num_parallel_tree=10,
 )
 

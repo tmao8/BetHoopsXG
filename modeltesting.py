@@ -58,13 +58,14 @@ else:
 
 # One hot encode categorical data to use with XGBoost
 data_one_hot_encoded = pd.get_dummies(
-    data, columns=["PLAYER", "HOME", "POSITION", "MATCHUP"], prefix="Category"
+    data, columns=["PLAYER", "POSITION", "MATCHUP"], prefix="Category"
 )
 # Sort columns to maintain consistency
 data_one_hot_encoded = data_one_hot_encoded.reindex(
     sorted(data_one_hot_encoded.columns), axis=1
 )
 data_one_hot_encoded["MIN"] = data_one_hot_encoded["MIN"].astype("float64")
+data_one_hot_encoded["HOME"] = data_one_hot_encoded["HOME"].astype("float64")
 
 
 # Separate into features and value we are predicting
@@ -74,7 +75,7 @@ X, y = shuffle(X, y, random_state=42)
 
 # Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=40
+    X, y, test_size=0.2, random_state=42
 )
 
 # find best XGBoost params
