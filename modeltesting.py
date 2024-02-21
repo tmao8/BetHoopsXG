@@ -16,7 +16,6 @@ from skopt import BayesSearchCV
 # Saved files and player index
 today_date = datetime.now().strftime("%Y-%m-%d")
 data_filename = f"gamelogs_as_of_{today_date}.csv"
-index_filename = f"last_index_{today_date}.txt"
 
 # Features to build model on:
 features = ["MATCHUP", "HOME", "PLAYER", "MIN", "POSITION"]
@@ -44,37 +43,18 @@ else:
     # Initialize an empty DataFrame if the file doesn't exist
     data = pd.DataFrame(columns=["PLAYER", "POSITION", "PTS", "MATCHUP", "HOME", "MIN"])
 
-# Check if the index file already exists: Index file used to continue data aquisition in case of timeout
-if os.path.exists(index_filename):
-    # Load existing index file
-    with open(index_filename, "r") as file:
-        last_index = int(file.read().strip())
-else:
-    # Set last_index to 0 if the file doesn't exist
-    last_index = 0
-
-
-# Acquire data in batches to help prevent timeouts
-batch_size = 10
-
-for i in tqdm(range(last_index, len(players), batch_size)):
-    # Get a batch of players
-    current_batch = players[i : i + batch_size]
-
-    # Fetch data for the current batch
-    for p in tqdm(current_batch):
+    # Acquire data
+    for i in tqdm(range(len(players))):
+        p = players[i]
         player_id = dt.get_player_id(p)
         datalog = dt.get_full_data(player_id)
         datalog["PLAYER"] = p
         data = pd.concat([data, datalog])
         time.sleep(0.6)
 
-    # Save the last index in the index file
-    with open(index_filename, "w") as file:
-        file.write(str(i + batch_size))
-
-    # Save data after each batch
+    # Save data
     data.to_csv(data_filename, index=False)
+
 
 # One hot encode categorical data to use with XGBoost
 data_one_hot_encoded = pd.get_dummies(
@@ -94,34 +74,35 @@ X, y = shuffle(X, y, random_state=42)
 
 # Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, random_state=40
 )
 
 # find best XGBoost params
 param_grid = {
-    "learning_rate": [0.01, 0.1, 0.2],
-    "n_estimators": [100, 150, 200],
-    "max_depth": [3, 4, 5, 6],
-    "min_child_weight": [1, 5],
-    "subsample": [0.6, 0.8, 1.0],
-    "colsample_bytree": [0.6, 0.8, 1.0],
-    "gamma": [0, 0.1, 0.2],
-    "reg_alpha": [0, 0.1, 0.2],
-    "reg_lambda": [0, 0.1, 0.2],
+    "learning_rate": [0.01, 0.17],
+    "n_estimators": [200, 250, 350],
+    "max_depth": [1, 3, 5],
+    "min_child_weight": [1, 2, 5, 6],
+    "subsample": [0.4, 0.5, 0.6, 0.8, 1.0],
+    "colsample_bytree": [0.4, 0.5, 0.6, 0.8, 1.0],
+    "gamma": [0, 0.05, 0.1, 0.15, 0.2],
+    "reg_alpha": [0, 0.05, 0.1, 0.15, 0.2],
+    "reg_lambda": [0, 0.05, 0.1, 0.15, 0.2],
 }
 
 model = xgb.XGBRegressor(
     enable_categorical=True,
     objective="reg:squarederror",
     tree_method="hist",
-    learning_rate=0.2,
-    subsample=0.6,
-    reg_lambda=0.1,
+    learning_rate=0.17,
+    subsample=0.4,
+    reg_lambda=0.05,
     reg_alpha=0.1,
-    n_estimators=350,
+    n_estimators=250,
     colsample_bytree=0.6,
-    gamma=0,
-    max_depth=4,
+    gamma=0.15,
+    max_depth=5,
+    min_child_weight=2,
     num_parallel_tree=10,
 )
 
@@ -133,8 +114,8 @@ from sklearn.model_selection import RandomizedSearchCV
 # random_search = RandomizedSearchCV(
 #     model,
 #     param_distributions=param_grid,
-#     n_iter=50,
-#     cv=5,
+#     n_iter=500,
+#     cv=2,
 #     scoring="neg_mean_squared_error",
 #     verbose=1,
 # )
@@ -174,7 +155,7 @@ comparison_df = pd.DataFrame(
 )
 comparison_df.to_csv("model_test.csv")
 
-xgb.plot_importance(model, max_num_features=25)
+xgb.plot_importance(model, max_num_features=50)
 plt.show()
 
 # Evaluate the model
