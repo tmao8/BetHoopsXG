@@ -52,13 +52,13 @@ pointlines = predictdf["PTS"]
 predictdf = predictdf.drop("attributes.stat_type", axis=1)
 predictdf = predictdf.drop("PTS", axis=1)
 predictdf = pd.get_dummies(
-    predictdf, columns=["PLAYER", "HOME", "POSITION", "MATCHUP"], prefix="Category"
+    predictdf, columns=["PLAYER", "POSITION", "MATCHUP"], prefix="Category"
 )
 
 # Get columns of full dataset
 data = pd.read_csv(data_filename)
 one_hot_encoded = pd.get_dummies(
-    data, columns=["PLAYER", "HOME", "POSITION", "MATCHUP"], prefix="Category"
+    data, columns=["PLAYER", "POSITION", "MATCHUP"], prefix="Category"
 )
 one_hot_encoded = one_hot_encoded.reindex(sorted(one_hot_encoded.columns), axis=1)
 X = one_hot_encoded.drop("PTS", axis=1)
