@@ -38,7 +38,7 @@ else:
             player_id = dt.get_player_id(row["PLAYER"])
 
             # Assign whether player is playing at home
-            predictdf.at[index, "HOME"] = dt.get_home(player_id)
+            predictdf.at[index, "HOME"] = dt.get_home(player_id).astype(int)
             time.sleep(0.6)
 
             # Assign estimated minutes for player
