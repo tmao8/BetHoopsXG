@@ -6,16 +6,6 @@ from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.endpoints import teamgamelog, scoreboardv2
 import time
 
-custom_headers = {
-    'Host': 'stats.nba.com',
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'Referer': 'https://stats.nba.com/',
-    'Origin': 'https://stats.nba.com/',
-    'Connection': 'keep-alive',
-}
-
 
 # Gets nba player's NBA.com ID using full name
 def get_player_id(name: str):
@@ -27,7 +17,7 @@ def get_player_gamelog(player_id):
     # Get player id
 
     # Get player game log using id
-    player_log = playergamelog.PlayerGameLog(player_id=player_id, headers=custom_headers, timeout=60)
+    player_log = playergamelog.PlayerGameLog(player_id=player_id)
     player_log = player_log.get_data_frames()[0]
 
     # # Get Player Usage Rates:
@@ -49,7 +39,7 @@ def get_player_gamelog(player_id):
 
 
 def get_player_position(player_id):
-    player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id, headers=custom_headers, timeout=60)
+    player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id)
 
     # Make the API request
     player_info_data = player_info.get_data_frames()[0]
@@ -81,7 +71,7 @@ def get_full_data(player_id):
 
 # Returns a player's average stat in the previous 5 games
 def get_last5_avg_stat(player_id, stat="MIN"):
-    game_log = playergamelog.PlayerGameLog(player_id=player_id, headers=custom_headers, timeout=60)
+    game_log = playergamelog.PlayerGameLog(player_id=player_id)
     game_log_data = game_log.get_data_frames()[0]
     # Select the last 5 games
     last_5_games = game_log_data.head(5)
@@ -93,10 +83,10 @@ def get_last5_avg_stat(player_id, stat="MIN"):
 # Returns True if the player's next game is at home
 def get_home(player_id):
     # Get the player's Team ID
-    player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id, headers=custom_headers, timeout=60)
+    player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id)
     player_info_data = player_info.get_data_frames()[0]
     team_id = player_info_data["TEAM_ID"][0]
-    todayscores = scoreboardv2.ScoreboardV2(headers=custom_headers, timeout=60).get_dict()
+    todayscores = scoreboardv2.ScoreboardV2().get_dict()
     for game in todayscores["resultSets"][0]["rowSet"]:
         if game[6] == team_id or game[7] == team_id:
             return game[6] == team_id
@@ -116,7 +106,7 @@ def get_last_game_pts(players):
     points = []
     for p in players:
         # Get player game log using id
-        player_log = playergamelog.PlayerGameLog(player_id=get_player_id(p), headers=custom_headers, timeout=60)
+        player_log = playergamelog.PlayerGameLog(player_id=get_player_id(p))
         player_log = player_log.get_data_frames()[0]
         last_game_points = player_log.iloc[0]["PTS"]
         points.append(last_game_points)
