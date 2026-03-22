@@ -3,7 +3,7 @@ from pandas import json_normalize
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import playergamelog, BoxScoreUsageV2
 from nba_api.stats.endpoints import commonplayerinfo
-from nba_api.stats.endpoints import teamgamelog, scoreboard
+from nba_api.stats.endpoints import teamgamelog, scoreboardv2
 import time
 
 
@@ -80,7 +80,7 @@ def get_home(player_id):
     player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id)
     player_info_data = player_info.get_data_frames()[0]
     team_id = player_info_data["TEAM_ID"][0]
-    todayscores = scoreboard.Scoreboard().get_dict()
+    todayscores = scoreboardv2.ScoreboardV2().get_dict()
     for game in todayscores["resultSets"][0]["rowSet"]:
         if game[6] == team_id or game[7] == team_id:
             return game[6] == team_id
