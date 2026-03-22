@@ -56,11 +56,17 @@ def get_player_position(player_id):
 
 # Returns data with gamelog and position
 def get_full_data(player_id):
-    pos = get_player_position(player_id)
-    gamelog = get_player_gamelog(player_id)
-    data = gamelog
-    data["POSITION"] = pos
-    return data
+    for attempt in range(3):
+        try:
+            pos = get_player_position(player_id)
+            time.sleep(1.2) # Sleep between the position and gamelog requests to avoid rate limit timeout
+            gamelog = get_player_gamelog(player_id)
+            data = gamelog
+            data["POSITION"] = pos
+            return data
+        except Exception as e:
+            print(f"NBA API Timeout for {player_id}. Retrying... ({attempt+1}/3)")
+            time.sleep(2)
 
 
 # Returns a player's average stat in the previous 5 games
