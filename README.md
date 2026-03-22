@@ -1,4 +1,4 @@
-# BetHoopsXG (formerly PrizePicks Pro)
+# BetHoopsXG
 
 BetHoopsXG is a fully automated, AI-powered web application that projects NBA player performance and automatically evaluates whether to go OVER or UNDER on PrizePicks betting lines. 
 
