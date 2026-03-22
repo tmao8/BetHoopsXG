@@ -32,7 +32,7 @@ def get_player_gamelog(player_id):
     # player_log["USAGE_RATE"] = usage_rates
 
     # Filter data to include only team against and home game
-    df = pd.DataFrame(player_log[["MATCHUP", "PTS", "MIN"]])
+    df = pd.DataFrame(player_log[["MATCHUP", "PTS", "REB", "AST", "MIN"]])
     df["HOME"] = (df["MATCHUP"].str[-5:-4] == ".").astype(int)
     df["MATCHUP"] = df["MATCHUP"].str[-3:]
     return df
@@ -63,15 +63,15 @@ def get_full_data(player_id):
     return data
 
 
-# Returns a player's average minutes in the previous 5 games
-def get_last5_avg_min(player_id):
+# Returns a player's average stat in the previous 5 games
+def get_last5_avg_stat(player_id, stat="MIN"):
     game_log = playergamelog.PlayerGameLog(player_id=player_id)
     game_log_data = game_log.get_data_frames()[0]
     # Select the last 5 games
     last_5_games = game_log_data.head(5)
-    # Calculate the average minutes
-    avg_minutes_last_5 = last_5_games["MIN"].mean()
-    return avg_minutes_last_5
+    # Calculate the average
+    avg_stat = last_5_games[stat].mean()
+    return avg_stat
 
 
 # Returns True if the player's next game is at home

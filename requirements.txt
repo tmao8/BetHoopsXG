@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pandas
+requests
+nba_api
+xgboost
+scikit-learn
+tqdm

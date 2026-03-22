@@ -4,7 +4,7 @@ from pandas import json_normalize
 
 
 # retrieves player point lines and player position of live prizepicks lines
-def retrieve_point_lines():
+def retrieve_lines(stat_type="Points"):
     session = requests.Session()
     response = session.get(
         "https://partner-api.prizepicks.com/projections?single_stat=True&league_id=7&per_page=100000'",
@@ -32,10 +32,10 @@ def retrieve_point_lines():
             "attributes.description",
         ]
     ]
-    prizepicksptsDf = df[df["attributes.stat_type"] == "Points"]
+    prizepicksDf = df[df["attributes.stat_type"] == stat_type]
     column_mapping = {
         "attributes.name": "PLAYER",
-        "attributes.line_score": "PTS",
+        "attributes.line_score": "LINE",
         "attributes.position": "POSITION",
         "attributes.description": "MATCHUP",
     }
@@ -51,7 +51,7 @@ def retrieve_point_lines():
     }
 
     # Rename columns and positions
-    prizepicksptsDf = prizepicksptsDf.copy()
-    prizepicksptsDf.rename(columns=column_mapping, inplace=True)
-    prizepicksptsDf["POSITION"] = prizepicksptsDf["POSITION"].map(position_mapping)
-    return prizepicksptsDf
+    prizepicksDf = prizepicksDf.copy()
+    prizepicksDf.rename(columns=column_mapping, inplace=True)
+    prizepicksDf["POSITION"] = prizepicksDf["POSITION"].map(position_mapping)
+    return prizepicksDf
