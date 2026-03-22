@@ -1,14 +1,11 @@
 import pandas as pd
 import playerdata as dt
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
-import matplotlib.pyplot as plt
 import time
 from tqdm import tqdm
 from datetime import datetime
 import os
 import pickle
-from sklearn.model_selection import GridSearchCV
 
 
 def buildmodel(target_stat="PTS"):
