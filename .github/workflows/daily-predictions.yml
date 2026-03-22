@@ -22,6 +22,8 @@ jobs:
         run: pip install pandas requests nba_api scikit-learn tqdm
         
       - name: Generate Predictions
+        env:
+          PROXY_LIST: ${{ secrets.PROXY_LIST }}
         run: python generate_daily.py
         
       - name: Setup Node.js
