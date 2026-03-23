@@ -63,9 +63,6 @@ def predict(target_stat="PTS"):
             if row["PLAYER"] == "Nicolas Claxton":
                 row["PLAYER"] = "Nic Claxton"
                 predictdf.at[index, "PLAYER"] = "Nic Claxton"
-            if row["PLAYER"] == "Walter Clayton":
-                row["PLAYER"] = "Walter Clayton Jr."
-                predictdf.at[index, "PLAYER"] = "Walter Clayton Jr."
             if row["PLAYER"] == "Tristan Silva":
                 row["PLAYER"] = "Tristan da Silva"
                 predictdf.at[index, "PLAYER"] = "Tristan da Silva"
@@ -81,12 +78,10 @@ def predict(target_stat="PTS"):
 
                 # Assign whether player is playing at home
                 predictdf.at[index, "HOME"] = int(dt.get_home(player_id))
-                time.sleep(0.6)
 
                 # Assign estimated minutes for player
                 predictdf.at[index, "LAST_5_MIN"] = dt.get_last5_avg_stat(player_id, "MIN")
                 predictdf.at[index, f"LAST_5_{short_stat}"] = dt.get_last5_avg_stat(player_id, short_stat)
-                time.sleep(0.6)
                 predictdf.to_csv(prizepicks_filename, index=False)
 
     saveoriginal = predictdf.copy()

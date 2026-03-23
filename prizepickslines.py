@@ -44,18 +44,7 @@ def retrieve_lines(stat_type="Points"):
         "attributes.description": "MATCHUP",
     }
 
-    position_mapping = {
-        "G": "Guard",
-        "F": "Forward",
-        "C": "Center",
-        "G-F": "Guard-Forward",
-        "F-G": "Forward-Guard",
-        "C-F": "Center-Forward",
-        "F-C": "Forward-Center",
-    }
-
-    # Rename columns and positions
+    # Rename columns
     prizepicksDf = prizepicksDf.copy()
     prizepicksDf.rename(columns=column_mapping, inplace=True)
-    prizepicksDf["POSITION"] = prizepicksDf["POSITION"].map(position_mapping)
     return prizepicksDf

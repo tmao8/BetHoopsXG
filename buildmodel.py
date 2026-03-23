@@ -21,6 +21,9 @@ def buildmodel(target_stat="PTS"):
     gamelogs_filename = f"gamelogs_as_of_{today_date}.csv"
     model_filename = f"xgboost_fitted_{target_stat}_{today_date}.pkl"
 
+    # Ensure the models directory exists natively before python tries to save to it
+    os.makedirs("models", exist_ok=True)
+
     if os.path.exists("models/" + model_filename):
         print("model already built")
         return
@@ -90,8 +93,6 @@ def buildmodel(target_stat="PTS"):
                 # Save checkpoint every 20 players to disk
                 if len(predictdf) % 20 == 0:
                     predictdf.to_csv(checkpoint_filename, index=False)
-                
-                time.sleep(0.6)
             
             # Reassign the queue to only the players that failed this pass
             players_to_fetch = failed_players

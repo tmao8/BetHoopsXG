@@ -1,6 +1,7 @@
 import predict
 import json
 import os
+import time
 
 stats = ["Points", "Rebounds", "Assists"]
 os.makedirs("ui/public/api", exist_ok=True)
@@ -13,5 +14,7 @@ for stat in stats:
     data = {"status": "success", "data": df.to_dict(orient="records")}
     with open(f"ui/public/api/latest_{stat}.json", "w") as f:
         json.dump(data, f)
+        
+    time.sleep(4)
 
 print("All predictions generated and saved!")
