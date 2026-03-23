@@ -1,10 +1,14 @@
 import predict
+import evaluate_performance
 import json
 import os
 import time
 
 stats = ["Points", "Rebounds", "Assists"]
 os.makedirs("ui/public/api", exist_ok=True)
+
+# Grade yesterday's predictions BEFORE overwriting with today's
+evaluate_performance.run()
 
 for stat in stats:
     print(f"Generating predictions for {stat}...")
