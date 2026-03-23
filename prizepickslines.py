@@ -15,6 +15,10 @@ def retrieve_lines(stat_type="Points"):
     df1 = df1[df1["type"] == "new_player"]
 
     df2 = json_normalize(response.json()["data"])
+    
+    # Filter out Demon and Goblin multipliers to only get the true "Standard" lines
+    if "attributes.odds_type" in df2.columns:
+        df2 = df2[df2["attributes.odds_type"] == "standard"]
 
     data = pd.merge(
         df1,
