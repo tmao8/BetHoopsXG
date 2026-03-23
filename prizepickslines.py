@@ -3,18 +3,23 @@ import requests
 from pandas import json_normalize
 
 
+_PRIZEPICKS_API_CACHE = None
+
 # retrieves player point lines and player position of live prizepicks lines
 def retrieve_lines(stat_type="Points"):
-    session = requests.Session()
-    response = session.get(
-        "https://partner-api.prizepicks.com/projections?single_stat=True&league_id=7&per_page=100000'",
-    )
-    print(response.status_code)
+    global _PRIZEPICKS_API_CACHE
+    if _PRIZEPICKS_API_CACHE is None:
+        session = requests.Session()
+        response = session.get(
+            "https://partner-api.prizepicks.com/projections?single_stat=True&league_id=7&per_page=100000'",
+        )
+        print(response.status_code)
+        _PRIZEPICKS_API_CACHE = response.json()
 
-    df1 = json_normalize(response.json()["included"])
+    df1 = json_normalize(_PRIZEPICKS_API_CACHE["included"])
     df1 = df1[df1["type"] == "new_player"]
 
-    df2 = json_normalize(response.json()["data"])
+    df2 = json_normalize(_PRIZEPICKS_API_CACHE["data"])
     
     # Filter out Demon and Goblin multipliers to only get the true "Standard" lines
     if "attributes.odds_type" in df2.columns:
