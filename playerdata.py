@@ -2,7 +2,7 @@ import pandas as pd
 from pandas import json_normalize
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import playergamelog, BoxScoreUsageV2
-from nba_api.stats.endpoints import commonplayerinfo
+from nba_api.stats.endpoints import commonplayerinfo, commonallplayers
 from nba_api.stats.endpoints import teamgamelog, scoreboardv2
 import time
 import os
@@ -15,9 +15,24 @@ def get_proxy():
     return random.choice(PROXY_LIST) if PROXY_LIST else None
 
 
+_ACTIVE_PLAYERS_DF = None
+
+def _get_active_players_df():
+    global _ACTIVE_PLAYERS_DF
+    if _ACTIVE_PLAYERS_DF is None:
+        _ACTIVE_PLAYERS_DF = commonallplayers.CommonAllPlayers(is_only_current_season=1, proxy=get_proxy()).get_data_frames()[0]
+    return _ACTIVE_PLAYERS_DF
+
 # Gets nba player's NBA.com ID using full name
 def get_player_id(name: str):
+    df = _get_active_players_df()
+    match = df[df['DISPLAY_FIRST_LAST'].str.lower() == name.lower()]
+    if not match.empty:
+        return match.iloc[0]['PERSON_ID']
+        
     player_info = players.find_players_by_full_name(name)
+    if not player_info:
+        return None
     return player_info[0]["id"]
 
 
@@ -102,11 +117,10 @@ def get_home(player_id):
     return False
 
 
-# Returns full list of NBA players this season
+# Return a list of all active NBA players' names
 def get_player_list():
-    allactive = players.get_active_players()
-    player_list = [nbaplayer["full_name"] for nbaplayer in allactive]
-    return player_list
+    df = _get_active_players_df()
+    return df['DISPLAY_FIRST_LAST'].tolist()
 
 
 # Returns DF containing each player's point total in their most recent game
