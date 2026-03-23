@@ -31,7 +31,8 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add ui/public/api/history.json || true
-          git diff --cached --quiet || git commit -m "chore: update prediction history"
+          git add ui/public/api/latest_*.json || true
+          git diff --cached --quiet || git commit -m "chore: update prediction history & latest picks"
           git push || true
         
       - name: Setup Node.js
