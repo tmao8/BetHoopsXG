@@ -118,6 +118,7 @@ def predict(target_stat="PTS"):
     comparison_df = pd.DataFrame(
         {
             "Player": players,
+            "MATCHUP": saveoriginal["MATCHUP"],
             "Line": pointlines,
             "Predicted": predictions,
             "Stat": target_stat
