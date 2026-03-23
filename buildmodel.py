@@ -11,7 +11,7 @@ import pickle
 def buildmodel(target_stat="PTS"):
     # Saved files and player index
     today_date = datetime.now().strftime("%Y-%m-%d")
-    data_filename = f"gamelogs_as_of_{today_date}.csv"
+    gamelogs_filename = f"gamelogs_as_of_{today_date}.csv"
     model_filename = f"xgboost_fitted_{target_stat}_{today_date}.pkl"
 
     if os.path.exists("models/" + model_filename):
@@ -27,18 +27,33 @@ def buildmodel(target_stat="PTS"):
     data = pd.DataFrame(columns=["PLAYER", "POSITION", "PTS", "REB", "AST", "MATCHUP", "HOME", "MIN", "LAST_5_MIN", "LAST_5_PTS", "LAST_5_REB", "LAST_5_AST"])
 
     # Check if the data file already exists
-    if os.path.exists(data_filename):
-        # Load existing data file
-        data = pd.read_csv(data_filename)
-        # If the file doesn't have the new columns, we'll re-fetch (or just let it fail and we should probably delete the old file)
-        if "LAST_5_MIN" not in data.columns:
-            data = pd.DataFrame(columns=["PLAYER", "POSITION", "PTS", "REB", "AST", "MATCHUP", "HOME", "MIN", "LAST_5_MIN", "LAST_5_PTS", "LAST_5_REB", "LAST_5_AST"])
-    if data.empty:
+    if os.path.exists(gamelogs_filename):
+        print(f"Loading existing gamelogs data from {gamelogs_filename}")
+        predictdf = pd.read_csv(gamelogs_filename)
+    else:
+        # Check for intermediate checkpoint resume file
+        checkpoint_filename = f"gamelogs_checkpoint_{today_date}.csv"
+        processed_players = set()
+        if os.path.exists(checkpoint_filename):
+            print(f"Resuming download from {checkpoint_filename}...")
+            predictdf = pd.read_csv(checkpoint_filename)
+            processed_players = set(predictdf["PLAYER"].unique())
+        else:
+            predictdf = pd.DataFrame(columns=["PLAYER", "POSITION", "PTS", "REB", "AST", "MATCHUP", "HOME", "MIN", "LAST_5_MIN", "LAST_5_PTS", "LAST_5_REB", "LAST_5_AST"])
+            
         # Acquire data
         for i in tqdm(range(len(players)), desc="Fetching BoxScores"):
             p = players[i]
+            if p in processed_players:
+                continue
+                
             player_id = dt.get_player_id(p)
             datalog = dt.get_full_data(player_id)
+            
+            # Reinstating crucial failsafe so the script doesn't crash on timeouts
+            if datalog is None or datalog.empty:
+                continue
+                
             datalog["PLAYER"] = p
             
             # Create rolling features (shift by 1 to prevent data leakage)
@@ -48,15 +63,23 @@ def buildmodel(target_stat="PTS"):
             datalog["LAST_5_REB"] = datalog["REB"].rolling(5, min_periods=1).mean().shift(1).fillna(0)
             datalog["LAST_5_AST"] = datalog["AST"].rolling(5, min_periods=1).mean().shift(1).fillna(0)
 
-            data = pd.concat([data, datalog])
+            # Append player to master dataframe
+            predictdf = pd.concat([predictdf, datalog], ignore_index=True)
+            
+            # Save checkpoint every 20 players to disk
+            if i % 20 == 0:
+                predictdf.to_csv(checkpoint_filename, index=False)
+            
             time.sleep(0.6)
-
-        # Save data
-        data.to_csv(data_filename, index=False)
+            
+        # Successfully finished all players, save final and remove checkpoint
+        predictdf.to_csv(gamelogs_filename, index=False)
+        if os.path.exists(checkpoint_filename):
+            os.remove(checkpoint_filename)
 
     # One hot encode categorical data to use with XGBoost
     data_one_hot_encoded = pd.get_dummies(
-        data, columns=["PLAYER", "POSITION", "MATCHUP"], prefix="Category"
+        predictdf, columns=["PLAYER", "POSITION", "MATCHUP"], prefix="Category"
     )
     data_one_hot_encoded = data_one_hot_encoded.reindex(
         sorted(data_one_hot_encoded.columns), axis=1
@@ -69,7 +92,7 @@ def buildmodel(target_stat="PTS"):
     data_one_hot_encoded = data_one_hot_encoded.drop(["MIN", "PTS", "REB", "AST"], axis=1, errors="ignore")
 
     # Separate into features and value we are predicting
-    y = data[target_stat]
+    y = predictdf[target_stat]
     X = data_one_hot_encoded
 
     # Build and fit model
