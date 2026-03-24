@@ -1,17 +1,28 @@
-"""
-evaluate_performance.py
------------------------
-Grades yesterday's ML predictions against actual NBA box scores.
-Appends results to ui/public/api/history.json for the React dashboard.
-"""
 import json
 import os
+import time
+import unicodedata
 from datetime import datetime, timedelta
 from nba_api.stats.endpoints import leaguegamelog
 
 HISTORY_FILE = "ui/public/api/history.json"
 STATS = ["Points", "Rebounds", "Assists"]
 STAT_TO_NBA = {"Points": "PTS", "Rebounds": "REB", "Assists": "AST"}
+
+
+def normalize_name(name):
+    """Normalize names: remove diacritics, handle Nic/Nicolas, suffixes, etc."""
+    if not name:
+        return ""
+    # Remove diacritics
+    name = ''.join(c for c in unicodedata.normalize('NFD', name) if unicodedata.category(c) != 'Mn')
+    name = name.lower().strip()
+    # Handle known variations
+    name = name.replace("nicolas claxton", "nic claxton")
+    # Remove common suffixes and punctuation
+    for suffix in [" jr.", " sr.", " iii", " ii", " iv", "."]:
+        name = name.replace(suffix, "")
+    return name
 
 
 def load_history():
@@ -34,27 +45,38 @@ def fetch_yesterday_actuals():
     Pull all player box scores from yesterday via LeagueGameLog.
     Returns a dict: { "PLAYER_NAME": {"PTS": x, "REB": y, "AST": z} }
     """
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y")
+    yesterday_dt = datetime.now() - timedelta(days=1)
+    yesterday = yesterday_dt.strftime("%m/%d/%Y")
+    
+    # Dynamically determine the season string (e.g., 2025-26)
+    if yesterday_dt.month >= 10: # Season starts in October
+        season = f"{yesterday_dt.year}-{str(yesterday_dt.year + 1)[2:]}"
+    else:
+        season = f"{yesterday_dt.year - 1}-{str(yesterday_dt.year)[2:]}"
+
+    # NBA API fetch
     try:
         log = leaguegamelog.LeagueGameLog(
-            season="2024-25",
+            season=season,
             date_from_nullable=yesterday,
             date_to_nullable=yesterday,
+            player_or_team_abbreviation='P',
+            timeout=60
         )
         df = log.get_data_frames()[0]
+        
+        actuals = {}
+        for _, row in df.iterrows():
+            name = normalize_name(row["PLAYER_NAME"])
+            actuals[name] = {
+                "PTS": row["PTS"],
+                "REB": row["REB"],
+                "AST": row["AST"],
+            }
+        return actuals
     except Exception as e:
-        print(f"⚠️ Could not fetch yesterday's box scores: {e}")
+        print(f"❌ Failed to fetch yesterday's box scores: {e}")
         return {}
-
-    actuals = {}
-    for _, row in df.iterrows():
-        name = row["PLAYER_NAME"]
-        actuals[name] = {
-            "PTS": row["PTS"],
-            "REB": row["REB"],
-            "AST": row["AST"],
-        }
-    return actuals
 
 
 def grade_predictions(actuals):
@@ -80,6 +102,7 @@ def grade_predictions(actuals):
 
         for entry in data["data"]:
             player = entry["Player"]
+            norm_player = normalize_name(player)
             line = float(entry["Line"])
             predicted = float(entry["Predicted"])
             matchup = entry.get("MATCHUP", "")
@@ -90,8 +113,8 @@ def grade_predictions(actuals):
 
             # Look up the actual stat
             actual = None
-            if player in actuals:
-                actual = actuals[player].get(nba_stat)
+            if norm_player in actuals:
+                actual = actuals[norm_player].get(nba_stat)
 
             # Cannot grade without an actual score
             if actual is None:
