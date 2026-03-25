@@ -4,6 +4,7 @@ import time
 import unicodedata
 from datetime import datetime, timedelta
 from nba_api.stats.endpoints import leaguegamelog
+from playerdata import get_proxy
 
 HISTORY_FILE = "ui/public/api/history.json"
 STATS = ["Points", "Rebounds", "Assists"]
@@ -61,6 +62,7 @@ def fetch_yesterday_actuals():
             date_from_nullable=yesterday,
             date_to_nullable=yesterday,
             player_or_team_abbreviation='P',
+            proxy=get_proxy(),
             timeout=60
         )
         df = log.get_data_frames()[0]
